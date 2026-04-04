@@ -1,7 +1,6 @@
 """
 Monetary Policy & The Inflation Crisis — Interactive Dashboard
 ==============================================================
-CMT218 Data Visualisation · Assessment 2
 Cardiff University · MSc Data Science
 
 Run:  python app.py
