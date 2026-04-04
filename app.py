@@ -1,6 +1,7 @@
 """
 Monetary Policy & The Inflation Crisis — Interactive Dashboard
 ==============================================================
+CMT218 Data Visualisation · Assessment 2
 Cardiff University · MSc Data Science
 
 Run:  python app.py
@@ -14,7 +15,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import dash
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, Output, State, callback, ctx, no_update
 import dash_bootstrap_components as dbc
 
 
@@ -132,6 +133,38 @@ def kpi_card(title, value, subtitle, colour):
         'boxShadow'      : '0 1px 4px rgba(0,0,0,0.08)',
     })
 
+
+# Expand button for chart cards
+def expand_btn(chart_id):
+    return html.Button(
+        '⤢ Expand',
+        id={'type': 'expand-btn', 'index': chart_id},
+        n_clicks=0,
+        style={
+            'position': 'absolute', 'top': '12px', 'right': '12px',
+            'background': '#F0F4F8', 'border': 'none', 'borderRadius': '6px',
+            'padding': '4px 10px', 'fontSize': '11px', 'color': '#6C757D',
+            'cursor': 'pointer', 'zIndex': '10', 'fontFamily': 'inherit',
+        }
+    )
+
+
+# Chart card with expand button
+def chart_card(title, subtitle, graph_id, height='300px'):
+    return make_card([
+        html.Div(style={'position': 'relative'}, children=[
+            expand_btn(graph_id),
+            html.H6(title,
+                     style={'color': TEXT_DARK, 'fontWeight': '600',
+                            'marginBottom': '4px'}),
+            html.P(subtitle,
+                    style={'color': TEXT_MUTED, 'fontSize': '12px',
+                           'marginBottom': '12px'}),
+            dcc.Graph(id=graph_id, style={'height': height})
+        ])
+    ])
+
+
 # Layout 
 app.layout = html.Div(style={'backgroundColor': BG_MAIN, 'minHeight': '100vh',
                               'fontFamily': 'Inter, Segoe UI, sans-serif'}, children=[
@@ -241,17 +274,10 @@ app.layout = html.Div(style={'backgroundColor': BG_MAIN, 'minHeight': '100vh',
         ]),
 
         # Section 2: Core story 
-        make_card([
-            html.H6('Inflation Rate vs Policy Rate (2007–2026)',
-                    style={'color': TEXT_DARK, 'fontWeight': '600',
-                           'marginBottom': '4px'}),
-            html.P('Solid lines = inflation · Dashed lines = policy rate · '
+        chart_card('Inflation Rate vs Policy Rate (2007–2026)',
+                   'Solid lines = inflation · Dashed lines = policy rate · '
                    'Shaded region = IMF forecast (2025–2030)',
-                   style={'color': TEXT_MUTED, 'fontSize': '12px',
-                          'marginBottom': '12px'}),
-            dcc.Graph(id='line-chart-main', style={'height': '420px'},
-                      config={'displayModeBar': False})
-        ]),
+                   'line-chart-main', height='420px'),
 
         # Section 3: Country deep-dive 
         html.Div(style={
@@ -259,25 +285,12 @@ app.layout = html.Div(style={'backgroundColor': BG_MAIN, 'minHeight': '100vh',
             'gridTemplateColumns': '1fr 1fr',
             'gap': '16px', 'marginBottom': '0'
         }, children=[
-            make_card([
-                html.H6('Inflation Intensity Heatmap',
-                        style={'color': TEXT_DARK, 'fontWeight': '600',
-                               'marginBottom': '4px'}),
-                html.P('Average annual inflation by country and year',
-                       style={'color': TEXT_MUTED, 'fontSize': '12px',
-                              'marginBottom': '12px'}),
-                dcc.Graph(id='heatmap-chart', style={'height': '300px'},
-                          config={'displayModeBar': False})
-            ]),
-            make_card([
-                html.H6('Policy Rate Hike Speed',
-                        style={'color': TEXT_DARK, 'fontWeight': '600',
-                               'marginBottom': '4px'}),
-                html.P('Policy rate at pre-hike baseline, peak, and current level per country',
-                        style={'color': TEXT_MUTED, 'fontSize': '12px', 'marginBottom': '12px'}),
-                dcc.Graph(id='slope-chart', style={'height': '300px'},
-                          config={'displayModeBar': False})
-            ]),
+            chart_card('Inflation Intensity Heatmap',
+                       'Average annual inflation by country and year',
+                       'heatmap-chart'),
+            chart_card('Policy Rate Hike Speed',
+                       'Policy rate at pre-hike baseline, peak, and current level per country',
+                       'slope-chart'),
         ]),
 
         # Section 4: Economic impact 
@@ -286,39 +299,19 @@ app.layout = html.Div(style={'backgroundColor': BG_MAIN, 'minHeight': '100vh',
             'gridTemplateColumns': '1fr 1fr',
             'gap': '16px', 'marginBottom': '0'
         }, children=[
-            make_card([
-                html.H6('GDP Growth Rate (2007–2030)',
-                        style={'color': TEXT_DARK, 'fontWeight': '600',
-                               'marginBottom': '4px'}),
-                html.P('Real data (solid) · IMF forecast 2025–2030 (dashed)',
-                       style={'color': TEXT_MUTED, 'fontSize': '12px',
-                              'marginBottom': '12px'}),
-                dcc.Graph(id='gdp-chart', style={'height': '300px'},
-                          config={'displayModeBar': False})
-            ]),
-            make_card([
-                html.H6('Unemployment Rate (2007–2026)',
-                        style={'color': TEXT_DARK, 'fontWeight': '600',
-                               'marginBottom': '4px'}),
-                html.P('Unemployment rate: pre-COVID (2019) vs post-hike (2022) vs latest (2024)',
-                        style={'color': TEXT_MUTED, 'fontSize': '12px', 'marginBottom': '12px'}),
-                dcc.Graph(id='unemployment-chart', style={'height': '300px'},
-                          config={'displayModeBar': False})
-            ]),
+            chart_card('GDP Growth Rate (2007–2030)',
+                       'Real data (solid) · IMF forecast 2025–2030 (dashed)',
+                       'gdp-chart'),
+            chart_card('Unemployment Rate (2007–2026)',
+                       'Unemployment rate: pre-COVID (2019) vs post-hike (2022) vs latest (2024)',
+                       'unemployment-chart'),
         ]),
 
         # Section 5: Scatter 
-        make_card([
-            html.H6('Inflation vs Policy Rate — Annual Scatter',
-                    style={'color': TEXT_DARK, 'fontWeight': '600',
-                           'marginBottom': '4px'}),
-            html.P('Each point = one country in one year · '
+        chart_card('Inflation vs Policy Rate — Annual Scatter',
+                   'Each point = one country in one year · '
                    'Size = unemployment rate · Colour = country',
-                   style={'color': TEXT_MUTED, 'fontSize': '12px',
-                          'marginBottom': '12px'}),
-            dcc.Graph(id='scatter-chart', style={'height': '380px'},
-                      config={'displayModeBar': False})
-        ]),
+                   'scatter-chart', height='380px'),
 
         # Footer 
         html.P([
@@ -336,7 +329,21 @@ app.layout = html.Div(style={'backgroundColor': BG_MAIN, 'minHeight': '100vh',
             'paddingTop' : '16px'
         }
         )
-    ])
+    ]),
+
+    # ── Fullscreen expand modal ──
+    dbc.Modal([
+        dbc.ModalHeader(
+            dbc.ModalTitle(id='modal-title'),
+            close_button=True
+        ),
+        dbc.ModalBody(
+            dcc.Graph(id='modal-chart', style={'height': '80vh'})
+        ),
+    ], id='chart-modal', size='xl', is_open=False),
+
+    # Hidden store to track which chart is expanded
+    dcc.Store(id='expanded-chart-id', data=''),
 ])
 
 
@@ -1030,6 +1037,55 @@ def update_all_charts(selected_countries, year_range):
         build_scatter_chart(selected_countries, year_range),
     )
 
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  EXPAND MODAL CALLBACK
+# ═════════════════════════════════════════════════════════════════════════════
+
+# Chart ID → (title, builder function)
+from dash import ALL
+
+CHART_REGISTRY = {
+    'line-chart-main':   ('Inflation Rate vs Policy Rate',        build_line_chart),
+    'heatmap-chart':     ('Inflation Intensity Heatmap',          build_heatmap),
+    'slope-chart':       ('Policy Rate: Baseline vs Peak vs Current', build_slope_chart),
+    'gdp-chart':         ('GDP Growth Rate (2007–2030)',          build_gdp_chart),
+    'unemployment-chart':('Unemployment: Before & After Rate Hikes', build_unemployment_chart),
+    'scatter-chart':     ('Inflation vs Policy Rate — Animated Scatter', build_scatter_chart),
+}
+
+
+@callback(
+    Output('chart-modal',    'is_open'),
+    Output('modal-title',    'children'),
+    Output('modal-chart',    'figure'),
+    Input({'type': 'expand-btn', 'index': ALL}, 'n_clicks'),
+    State('country-filter',  'value'),
+    State('year-filter',     'value'),
+    prevent_initial_call=True
+)
+def toggle_expand_modal(n_clicks_list, selected_countries, year_range):
+    if not any(n_clicks_list):
+        return no_update, no_update, no_update
+
+    # Find which button was clicked
+    triggered = ctx.triggered_id
+    if triggered is None:
+        return no_update, no_update, no_update
+
+    chart_id = triggered['index']
+
+    if chart_id not in CHART_REGISTRY:
+        return no_update, no_update, no_update
+
+    if not selected_countries:
+        selected_countries = COUNTRIES
+
+    title, builder = CHART_REGISTRY[chart_id]
+    fig = builder(selected_countries, year_range)
+
+    return True, title, fig
 
 
 # ═════════════════════════════════════════════════════════════════════════════
